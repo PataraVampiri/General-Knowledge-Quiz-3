@@ -1,0 +1,95 @@
+import sys
+from PyQt5.QtWidgets import (QApplication, QWidget, QVBoxLayout, QHBoxLayout,
+                             QLabel, QPushButton, QGroupBox, QRadioButton, QMessageBox)
+from random import shuffle
+
+class Question:
+    def __init__(self, question, options, answer, explanation):
+        self.question = question
+        self.options = options
+        self.answer = answer
+        self.explanation = explanation
+
+questions = [
+    Question("What is the largest planet in our solar system?", ["Earth", "Jupiter", "Mars", "Saturn"], "Jupiter", "Jupiter is the largest planet in our solar system."),
+    Question("Who is known as the father of computers?", ["Alan Turing", "Charles Babbage", "Tim Berners-Lee", "John von Neumann"], "Charles Babbage", "Charles Babbage is known as the father of computers."),
+    Question("Who wrote 'Romeo and Juliet'?", ["Charles Dickens", "J.K. Rowling", "William Shakespeare", "Mark Twain"], "William Shakespeare", "'Romeo and Juliet' was written by William Shakespeare."),
+    Question("What is the capital city of Japan?", ["Seoul", "Beijing", "Tokyo", "Bangkok"], "Tokyo", "Tokyo is the capital city of Japan."),
+    Question("Which planet is known as the Red Planet?", ["Venus", "Mars", "Jupiter", "Saturn"], "Mars", "Mars is known as the Red Planet."),
+    Question("What is the tallest building in the world?", ["Shanghai Tower", "Burj Khalifa", "One World Trade Center", "Taipei 101"], "Burj Khalifa", "Burj Khalifa is the tallest building in the world.")
+]
+
+class QuizApp(QWidget):
+    def __init__(self):
+        super().__init__()
+        self.initUI()
+
+    def initUI(self):
+        self.setWindowTitle('General Knowledge Quiz')
+        self.score = 0
+        self.question_index = 0
+        shuffle(questions)
+
+        self.question_label = QLabel(self)
+        self.question_label.setWordWrap(True)
+
+        self.radio_group = QGroupBox('Possible answers:')
+        self.answer_buttons = [QRadioButton(self) for _ in range(4)]
+
+        self.radio_layout = QVBoxLayout()
+        for btn in self.answer_buttons:
+            self.radio_layout.addWidget(btn)
+        self.radio_group.setLayout(self.radio_layout)
+
+        self.submit_button = QPushButton('Submit', self)
+        self.submit_button.clicked.connect(self.check_answer)
+
+        self.layout = QVBoxLayout()
+        self.layout.addWidget(self.question_label)
+        self.layout.addWidget(self.radio_group)
+        self.layout.addWidget(self.submit_button)
+
+        self.setLayout(self.layout)
+        self.load_question()
+
+    def load_question(self):
+        if self.question_index < len(questions):
+            question = questions[self.question_index]
+            self.question_label.setText(question.question)
+            options = question.options[:]
+            shuffle(options)
+            for btn, option in zip(self.answer_buttons, options):
+                btn.setText(option)
+                btn.setChecked(False)
+        else:
+            self.end_quiz()
+
+    def check_answer(self):
+        selected_button = next((btn for btn in self.answer_buttons if btn.isChecked()), None)
+        if selected_button:
+            selected_answer = selected_button.text()
+            correct_answer = questions[self.question_index].answer
+            if selected_answer == correct_answer:
+                self.score += 2
+                QMessageBox.information(self, 'Correct', f'Correct!\n{questions[self.question_index].explanation}')
+            else:
+                QMessageBox.information(self, 'Incorrect', f'Incorrect! The correct answer is: {correct_answer}\n{questions[self.question_index].explanation}')
+            self.question_index += 1
+            self.load_question()
+        else:
+            QMessageBox.warning(self, 'No Selection', 'Please select an answer before submitting.')
+
+    def end_quiz(self):
+        message = f'Your final score is: {self.score}/12\n'
+        if self.score == 12:
+            message += 'Congratulations! You\'ve won $100!'
+        else:
+            message += 'Better luck next time!'
+        QMessageBox.information(self, 'Quiz Over', message)
+        self.close()
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    quiz = QuizApp()
+    quiz.show()
+    sys.exit(app.exec_())
